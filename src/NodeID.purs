@@ -13,11 +13,7 @@ import File (File)
 -- TODO: Would be nice to simulate ControlledOption here.
 type NodeID = { file :: Maybe (Handle File), localIdent :: UInt }
 
-showNodeID :: NodeID -> String
-showNodeID n = case n.file of
-  Nothing -> "<" <> show n.localIdent <> ">"
-  Just f  -> "<" <> show n.localIdent <> "(" <> show f <> ")>"
-
+-- TODO: do we even need these?
 root :: NodeID
 root = { file: Nothing, localIdent: UInt.fromInt 1 }
 
