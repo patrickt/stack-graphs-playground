@@ -1,8 +1,4 @@
-module NodeID
-       ( NodeID
-       , root
-       , jumpTo
-       ) where
+module NodeID where
 
 import Prelude
 
@@ -27,3 +23,15 @@ root = { file: Nothing, localIdent: UInt.fromInt 1 }
 
 jumpTo :: NodeID
 jumpTo = { file:  Nothing, localIdent: UInt.fromInt 2 }
+
+inFile :: Handle File -> UInt -> NodeID
+inFile f li = { file: Just f, localIdent: li }
+
+isRoot :: NodeID -> Boolean
+isRoot n = n.localIdent == root.localIdent
+
+isJumpTo :: NodeID -> Boolean
+isJumpTo n = n.localIdent == jumpTo.localIdent
+
+isInFile :: Handle File -> NodeID -> Boolean
+isInFile f n = n.file == Just f
