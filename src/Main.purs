@@ -5,6 +5,8 @@ import Prelude
 import Effect (Effect)
 import Effect.Console (log)
 
+import NodeID as NodeID
+
 main :: Effect Unit
 main = do
-  log "🍝"
+  log (show NodeID.root)
