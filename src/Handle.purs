@@ -1,4 +1,4 @@
-module Handle (Handle, unsafe) where
+module Handle (Handle (..), unsafe) where
 
 import Prelude
 

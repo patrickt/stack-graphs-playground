@@ -11,6 +11,8 @@ import Control.Monad.ST.Ref (STRef)
 import Control.Monad.ST.Ref as STRef
 import Data.UInt (UInt)
 import Data.UInt as UInt
+import Data.HashMap (HashMap)
+import Data.HashMap as HashMap
 
 import Node (Node, Visibility (..), Nature (..))
 import NodeID (NodeID)
@@ -18,20 +20,25 @@ import NodeID as NodeID
 import Handle (Handle)
 import Handle as Handle
 import Symbol (Symbol)
+import Source (Source)
+import Source as Source
 import File (File)
 
 type StackGraph r = {
-  source :: STRef r UInt
+  -- TODO: currently using this for everything; we could split it up better
+  fresh :: Source r,
+  files :: STRef r (HashMap String (Handle File))
 }
 
 newStackGraph :: forall r . ST r (StackGraph r)
 newStackGraph = do
-  (src :: STRef r UInt) <- STRef.new (NodeID.jumpTo.localIdent)
-  pure ({ source: src })
+  fresh <- Source.new
+  files <- STRef.new HashMap.empty
+  pure { fresh, files }
 
 makeNodeID :: forall r . Handle File -> StackGraph r -> ST r NodeID
 makeNodeID f sg = do
-  new <- STRef.modify (\a -> a + UInt.fromInt 1) sg.source
+  new <- Source.next sg.fresh
   pure { file: Just f, localIdent: new }
 
 rootNode :: Handle Node
@@ -62,7 +69,15 @@ addPopSymbolNode _ _ _ _ = pure Nothing
 -- addFile _ _ = pure (Left (Handle.unsafe 666))
 
 getOrCreateFile :: forall r . String -> StackGraph r -> ST r (Handle File)
-getOrCreateFile _ _ = pure (Handle.unsafe 666)
+getOrCreateFile str sg = do
+  allFiles <- STRef.read sg.files
+  let mFound = HashMap.lookup str allFiles
+  case mFound of
+    Just f -> pure f
+    Nothing -> do
+      new <- Source.nextHandle sg.fresh
+      _ <- STRef.modify (HashMap.insert str new) sg.files
+      pure new
 
 -- getFile :: forall r . String -> StackGraph r -> ST r (Maybe (Handle File))
 -- getFile _ _ = pure Nothing
