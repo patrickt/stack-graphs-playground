@@ -17,6 +17,12 @@ import File (File)
 
 newtype StackGraph (r :: ST.Region) = StackGraph { todo :: String }
 
+rootNode :: Handle Node
+rootNode = Handle.unsafe 1
+
+jumpToNode :: Handle Node
+jumpToNode = Handle.unsafe 2
+
 addSymbol :: forall r . String -> StackGraph r -> ST r (Handle Symbol)
 addSymbol _ _ = pure (Handle.unsafe 666)
 
