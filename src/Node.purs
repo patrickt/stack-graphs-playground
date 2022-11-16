@@ -13,7 +13,7 @@ import Handle (Handle)
 import Symbol (Symbol)
 import File (File)
 
-data Nature = Reference | Definition
+data Nature = Reference | Definition | Internal
 
 derive instance eqNature :: Eq Nature
 derive instance genNature :: Generic Nature _
@@ -25,7 +25,7 @@ derive instance eqScoping :: Eq Scoping
 derive instance genScoping :: Generic Scoping _
 instance Show Scoping where show = genericShow
 
-data Visibility = Exported | Internal
+data Visibility = Exported | Hidden
 
 derive instance eqVisibility :: Eq Visibility
 derive instance genVisibility :: Generic Visibility _
