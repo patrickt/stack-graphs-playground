@@ -18,7 +18,7 @@ root :: NodeID
 root = { file: Nothing, localIdent: UInt.fromInt 1 }
 
 jumpTo :: NodeID
-jumpTo = { file:  Nothing, localIdent: UInt.fromInt 2 }
+jumpTo = { file: Nothing, localIdent: UInt.fromInt 2 }
 
 inFile :: Handle File -> UInt -> NodeID
 inFile f li = { file: Just f, localIdent: li }
