@@ -9,6 +9,7 @@ import Control.Monad.ST.Ref (STRef)
 import Control.Monad.ST.Ref as STRef
 import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
+import Data.Either
 
 import Node (Node, Visibility (..), Nature (..))
 import Node as Node
@@ -20,6 +21,8 @@ import Source (Source)
 import Source as Source
 import NodesToEdges (NodesToEdges)
 import NodesToEdges as NodesToEdges
+import NodeStorage (NodeStorage)
+import NodeStorage as NodeStorage
 import File (File)
 
 type StackGraph r = {
@@ -27,6 +30,7 @@ type StackGraph r = {
   fresh :: Source r,
   files :: STRef r (HashMap String (Handle File)),
   -- TODO: we may need two maps?
+  nodes :: NodeStorage r,
   edges :: NodesToEdges r
 }
 
@@ -35,7 +39,8 @@ newStackGraph = do
   fresh <- Source.new
   files <- STRef.new HashMap.empty
   edges <- NodesToEdges.new
-  pure { fresh, files, edges }
+  nodes <- NodeStorage.new
+  pure { fresh, files, edges, nodes }
 
 makeNodeID :: forall r . Handle File -> StackGraph r -> ST r NodeID
 makeNodeID f sg = do
@@ -52,7 +57,9 @@ addSymbol :: forall r . String -> StackGraph r -> ST r (Handle Symbol)
 addSymbol _ _ = pure (Handle.unsafe 666)
 
 addNode :: forall r . Node -> StackGraph r -> ST r (Maybe (Handle Node))
-addNode _ _ = pure Nothing
+addNode n s = do
+  eRes <- NodeStorage.add s.fresh n s.nodes
+  pure (either (const Nothing) Just eRes)
 
 addScopeNode :: forall r . NodeID -> Visibility -> StackGraph r -> ST r (Maybe (Handle Node))
 addScopeNode ident visibility = addNode (Node.Scope {ident, visibility})

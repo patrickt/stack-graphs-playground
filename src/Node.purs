@@ -6,6 +6,8 @@ import Prim hiding (Symbol)
 import Data.Maybe
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
+import Data.UInt as UInt
+import Data.Hashable
 
 import NodeID (NodeID)
 import NodeID as NodeID
@@ -44,6 +46,11 @@ data Node
   | Pop SymbolNode
   | Scope ScopeNode
   | Drop DropScopesNode
+
+derive instance eqNode :: Eq Node
+
+instance hasNode :: Hashable Node where
+  hash n = UInt.toInt ((id n).localIdent)
 
 id :: Node -> NodeID
 id n = case n of
