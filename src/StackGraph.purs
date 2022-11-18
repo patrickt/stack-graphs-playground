@@ -96,6 +96,8 @@ getOrCreateFile str sg = do
 addEdge :: forall r . Handle Node -> Handle Node -> Int -> StackGraph r -> ST r Unit
 addEdge source sink precedence sg = NodesToEdges.add source sink precedence sg.edges
 
+-- This is https://github.github.com/stack-graph-docs/#import
+-- aka `import a.b` in Python.
 sampleStackGraph :: forall r . (Partial) => ST r (StackGraph r)
 sampleStackGraph = do
   sg <- newStackGraph
