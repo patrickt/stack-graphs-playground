@@ -19,7 +19,7 @@ derive instance eqNature :: Eq Nature
 derive instance genNature :: Generic Nature _
 instance Show Nature where show = genericShow
 
-data Scoping = Scoped | Unscoped
+data Scoping = Scoped NodeID | Unscoped
 
 derive instance eqScoping :: Eq Scoping
 derive instance genScoping :: Generic Scoping _
@@ -40,7 +40,7 @@ type ScopeNode = { ident :: NodeID, visibility :: Visibility }
 data Node
   = Root
   | JumpTo
-  | Push SymbolNode NodeID
+  | Push SymbolNode
   | Pop SymbolNode
   | Scope ScopeNode
   | Drop DropScopesNode
@@ -49,7 +49,7 @@ id :: Node -> NodeID
 id n = case n of
   Root -> NodeID.root
   JumpTo -> NodeID.jumpTo
-  Push s _ -> s.ident
+  Push s -> s.ident
   Pop s -> s.ident
   Scope s -> s.ident
   Drop s -> s.ident
@@ -59,12 +59,12 @@ isExportedScope (Scope s) = s.visibility == Exported
 isExportedScope _ = false
 
 isDefinition :: Node -> Boolean
-isDefinition (Push s _) = s.nature == Definition
+isDefinition (Push s) = s.nature == Definition
 isDefinition (Pop s) = s.nature == Definition
 isDefinition _ = false
 
 isReference :: Node -> Boolean
-isReference (Push s _) = s.nature == Reference
+isReference (Push s) = s.nature == Reference
 isReference (Pop s) = s.nature == Reference
 isReference _ = false
 
@@ -77,12 +77,12 @@ isRoot Root = true
 isRoot _ = false
 
 symbol :: Node -> Maybe (Handle Symbol)
-symbol (Push s _) = Just s.symbol
+symbol (Push s) = Just s.symbol
 symbol (Pop s) = Just s.symbol
 symbol _ = Nothing
 
 scope :: Node -> Maybe NodeID
-scope (Push _ n) = Just n
+scope (Push { scoping: Scoped n}) = Just n
 scope _ = Nothing
 
 file :: Node -> Maybe (Handle File)
