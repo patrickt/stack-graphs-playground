@@ -23,12 +23,15 @@ import NodesToEdges (NodesToEdges)
 import NodesToEdges as NodesToEdges
 import NodeStorage (NodeStorage)
 import NodeStorage as NodeStorage
+import StringStorage (StringStorage)
+import StringStorage as StringStorage
 import File (File)
 
 type StackGraph r = {
   -- TODO: currently using this for everything; we could split it up better
   fresh :: Source r,
-  files :: STRef r (HashMap String (Handle File)),
+  files :: StringStorage File r,
+  symbols :: StringStorage Symbol r,
   -- TODO: we may need two maps?
   nodes :: NodeStorage r,
   edges :: NodesToEdges r
@@ -37,10 +40,11 @@ type StackGraph r = {
 newStackGraph :: forall r . ST r (StackGraph r)
 newStackGraph = do
   fresh <- Source.new
-  files <- STRef.new HashMap.empty
+  files <- StringStorage.new
+  symbols <- StringStorage.new
   edges <- NodesToEdges.new
   nodes <- NodeStorage.new
-  pure { fresh, files, edges, nodes }
+  pure { fresh, files, symbols, edges, nodes }
 
 makeNodeID :: forall r . Handle File -> StackGraph r -> ST r NodeID
 makeNodeID f sg = do
@@ -54,7 +58,7 @@ jumpToNode :: Handle Node
 jumpToNode = Handle.unsafe 2
 
 addSymbol :: forall r . String -> StackGraph r -> ST r (Handle Symbol)
-addSymbol _ _ = pure (Handle.unsafe 666)
+addSymbol str sg = StringStorage.insert sg.fresh str sg.symbols
 
 addNode :: forall r . Node -> StackGraph r -> ST r (Maybe (Handle Node))
 addNode n s = do
@@ -70,28 +74,8 @@ addPushSymbolNode ident symbol nature = addNode (Node.Push { ident, symbol, scop
 addPopSymbolNode :: forall r . NodeID -> Handle Symbol -> Nature -> StackGraph r -> ST r (Maybe (Handle Node))
 addPopSymbolNode ident symbol nature = addNode (Node.Pop { ident, symbol, scoping: Node.Unscoped, nature})
 
--- addFile :: forall r . String -> StackGraph r -> ST r (Either (Handle File) (Handle File))
--- addFile _ _ = pure (Left (Handle.unsafe 666))
-
 getOrCreateFile :: forall r . String -> StackGraph r -> ST r (Handle File)
-getOrCreateFile str sg = do
-  allFiles <- STRef.read sg.files
-  let mFound = HashMap.lookup str allFiles
-  case mFound of
-    Just f -> pure f
-    Nothing -> do
-      new <- Source.nextHandle sg.fresh
-      _ <- STRef.modify (HashMap.insert str new) sg.files
-      pure new
-
--- getFile :: forall r . String -> StackGraph r -> ST r (Maybe (Handle File))
--- getFile _ _ = pure Nothing
-
--- eachNodeInFile :: forall r . Handle File -> StackGraph r -> (Handle Node -> ST r Unit) -> ST r Unit
--- eachNodeInFile _ _ _ = pure unit
-
--- eachFile :: forall r . StackGraph r -> (Handle File -> ST r Unit) -> ST r Unit
--- eachFile _ _ = pure unit
+getOrCreateFile str sg = StringStorage.insert sg.fresh str sg.files
 
 addEdge :: forall r . Handle Node -> Handle Node -> Int -> StackGraph r -> ST r Unit
 addEdge source sink precedence sg = NodesToEdges.add source sink precedence sg.edges
