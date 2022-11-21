@@ -80,6 +80,8 @@ getOrCreateFile str sg = StringStorage.insert sg.fresh str sg.files
 addEdge :: forall r . Handle Node -> Handle Node -> Int -> StackGraph r -> ST r Unit
 addEdge source sink precedence sg = NodesToEdges.add source sink precedence sg.edges
 
+hasEdge :: forall r. Handle Node -> Handle Node -> StackGraph r ->
+
 -- This is https://github.github.com/stack-graph-docs/#import
 -- aka `import a.b` in Python.
 sampleStackGraph :: forall r . (Partial) => ST r (StackGraph r)

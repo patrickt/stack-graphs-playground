@@ -31,3 +31,6 @@ insert src str s = do
     Nothing -> do
       next <- Source.nextHandle src
       next <$ STRef.modify (HashMap.insert str next) s
+
+size :: forall a r . StringStorage a r -> ST r Int
+size s = HashMap.size <$> STRef.read s
