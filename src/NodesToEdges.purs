@@ -12,12 +12,7 @@ import Data.HashSet as HashSet
 
 import Handle
 import Node
-
-type Edge = {
-  source :: Handle Node,
-  sink :: Handle Node,
-  precedence :: Int
-}
+import Edge
 
 -- Poor locality, etc, but will do for now.
 type NodesToEdges (r :: Region) = STRef r (HashMap (Handle Node) (HashSet Edge))

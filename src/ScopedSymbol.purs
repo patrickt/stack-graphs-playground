@@ -8,6 +8,6 @@ import Node (Node)
 import Symbol (Symbol)
 
 type ScopedSymbol = {
-  symbol :: Symbol,
+  symbol :: Handle Symbol,
   scopes :: Maybe (Array (Handle Node))
 }
