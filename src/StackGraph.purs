@@ -7,7 +7,7 @@ import Data.Maybe (Maybe (..))
 import Control.Monad.ST (ST)
 import Data.Either (either)
 
-import Node (Node, Visibility (..), Nature (..))
+import Node (Node)
 import Node as Node
 import NodeID (NodeID)
 import Handle (Handle)
@@ -67,14 +67,14 @@ addNode n s = do
   eRes <- NodeStorage.add s.fresh n s.nodes
   pure (either (const Nothing) Just eRes)
 
-addScopeNode :: forall r . NodeID -> Visibility -> StackGraph r -> ST r (Maybe (Handle Node))
-addScopeNode ident visibility = addNode (Node.Scope {ident, visibility})
+addScopeNode :: forall r . NodeID -> Boolean -> StackGraph r -> ST r (Maybe (Handle Node))
+addScopeNode ident isExported = addNode (Node.Scope {ident, isExported})
 
-addPushSymbolNode :: forall r . NodeID -> Handle Symbol -> Nature -> StackGraph r -> ST r (Maybe (Handle Node))
-addPushSymbolNode ident symbol nature = addNode (Node.Push { ident, symbol, scoping: Node.Unscoped, nature })
+addPushSymbolNode :: forall r . NodeID -> Handle Symbol -> Boolean -> StackGraph r -> ST r (Maybe (Handle Node))
+addPushSymbolNode ident symbol isReference = addNode (Node.PushSymbol { ident, symbol, isReference })
 
-addPopSymbolNode :: forall r . NodeID -> Handle Symbol -> Nature -> StackGraph r -> ST r (Maybe (Handle Node))
-addPopSymbolNode ident symbol nature = addNode (Node.Pop { ident, symbol, scoping: Node.Unscoped, nature})
+addPopSymbolNode :: forall r . NodeID -> Handle Symbol -> Boolean -> StackGraph r -> ST r (Maybe (Handle Node))
+addPopSymbolNode ident symbol isDefinition = addNode (Node.PopSymbol { ident, symbol, isDefinition })
 
 getOrCreateFile :: forall r . String -> StackGraph r -> ST r (Handle File)
 getOrCreateFile str sg = StringStorage.insert sg.fresh str sg.files
@@ -92,39 +92,39 @@ sampleStackGraph = do
   file <- getOrCreateFile "__main__" sg
   symA <- addSymbol "a" sg
   nidA1 <- makeNodeID file sg
-  mpushA <- addPushSymbolNode nidA1 symA Reference sg
+  mpushA <- addPushSymbolNode nidA1 symA true sg
   let Just pushA = mpushA
   addEdge pushA rootNode 0 sg
 
   symDot <- addSymbol "." sg
   nidDot1 <- makeNodeID file sg
-  mPushDot <- addPushSymbolNode nidDot1 symDot Internal sg
+  mPushDot <- addPushSymbolNode nidDot1 symDot false sg
   let Just pushDot = mPushDot
   addEdge pushDot pushA 0 sg
 
   symB <- addSymbol "b" sg
   nidB1 <- makeNodeID file sg
-  mPushB <- addPushSymbolNode nidB1 symB Reference sg
+  mPushB <- addPushSymbolNode nidB1 symB true sg
   let Just pushB = mPushB
   addEdge pushB pushDot 0 sg
 
   nidB2 <- makeNodeID file sg
-  mPopB <- addPopSymbolNode nidB2 symB Definition sg
+  mPopB <- addPopSymbolNode nidB2 symB false sg
   let Just popB = mPopB
   addEdge popB pushB 0 sg
 
   nidDot2 <- makeNodeID file sg
-  mPopDot <- addPopSymbolNode nidDot2 symDot Internal sg
+  mPopDot <- addPopSymbolNode nidDot2 symDot true sg
   let Just popDot = mPopDot
   addEdge popDot popB 0 sg
 
   nidA2 <- makeNodeID file sg
-  mPopA <- addPopSymbolNode nidA2 symA Definition sg
+  mPopA <- addPopSymbolNode nidA2 symA false sg
   let Just popA = mPopA
   addEdge popA popDot 0 sg
 
   nidCurr <- makeNodeID file sg
-  mCurr <- addScopeNode nidCurr Hidden sg
+  mCurr <- addScopeNode nidCurr false sg
   let Just curr = mCurr
   addEdge curr popA 0 sg
 

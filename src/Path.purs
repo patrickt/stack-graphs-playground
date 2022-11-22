@@ -58,10 +58,10 @@ append sg self edge = runExceptT do
   sink <- lift (StackGraph.get sg edge.sink)
   case sink of
     -- Push-symbol nodes
-    Node.Push {symbol, scoping: Node.Unscoped, nature: _nature} -> do
+    Node.PushSymbol {symbol} -> do
       let scopedSymbol = { symbol, scopes: Nothing }
       pure self { symbolStack = List.Cons scopedSymbol self.symbolStack }
-    Node.Push {symbol, scoping: Node.Scoped scope, nature: _nature} -> do
+    Node.PushScopedSymbol {symbol, scope} -> do
       sinkScope <- lift (StackGraph.nodeForID sg scope) >>= maybeM (throwError UnknownAttachedScope)
       let scopedSymbol = { symbol, scopes: Just (List.Cons sinkScope self.scopeStack)}
       pure self { symbolStack = List.Cons scopedSymbol self.symbolStack

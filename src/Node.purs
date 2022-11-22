@@ -1,78 +1,62 @@
 module Node where
 
+import Data.Hashable
+import Data.Maybe
 import Prelude
 import Prim hiding (Symbol)
 
-import Data.Maybe
+import Data.Function (on)
 import Data.Generic.Rep (class Generic)
 import Data.Show.Generic (genericShow)
 import Data.UInt as UInt
-import Data.Hashable
-
+import File (File)
+import Handle (Handle)
 import NodeID (NodeID)
 import NodeID as NodeID
-import Handle (Handle)
 import Symbol (Symbol)
-import File (File)
-
-data Nature = Reference | Definition | Internal
-
-derive instance eqNature :: Eq Nature
-derive instance genNature :: Generic Nature _
-instance Show Nature where show = genericShow
-
-data Scoping = Scoped NodeID | Unscoped
-
-derive instance eqScoping :: Eq Scoping
-derive instance genScoping :: Generic Scoping _
-instance Show Scoping where show = genericShow
-
-data Visibility = Exported | Hidden
-
-derive instance eqVisibility :: Eq Visibility
-derive instance genVisibility :: Generic Visibility _
-instance Show Visibility where show = genericShow
-
-type DropScopesNode = { ident :: NodeID }
-
-type SymbolNode = { ident :: NodeID, symbol :: Handle Symbol, scoping :: Scoping, nature :: Nature }
-
-type ScopeNode = { ident :: NodeID, visibility :: Visibility }
 
 data Node
   = Root
   | JumpTo
-  | Push SymbolNode
-  | Pop SymbolNode
-  | Scope ScopeNode
-  | Drop DropScopesNode
 
-derive instance eqNode :: Eq Node
+  | PushSymbol { ident :: NodeID, symbol :: Handle Symbol, isReference :: Boolean }
+  | PopSymbol { ident :: NodeID, symbol :: Handle Symbol, isDefinition :: Boolean }
 
-instance hasNode :: Hashable Node where
+  | PushScopedSymbol { ident :: NodeID, symbol :: Handle Symbol, scope :: NodeID, isReference :: Boolean }
+  | PopScopedSymbol { ident :: NodeID, symbol :: Handle Symbol, isDefinition :: Boolean }
+
+  | Scope { ident :: NodeID, isExported :: Boolean }
+  | Drop { ident :: NodeID }
+
+instance eqNode :: Eq Node where
+  eq = eq `on` id
+
+instance hashNode :: Hashable Node where
   hash n = UInt.toInt ((id n).localIdent)
 
 id :: Node -> NodeID
 id n = case n of
   Root -> NodeID.root
   JumpTo -> NodeID.jumpTo
-  Push s -> s.ident
-  Pop s -> s.ident
+  PushSymbol s -> s.ident
+  PushScopedSymbol s -> s.ident
+  PopScopedSymbol s -> s.ident
+  PopSymbol s -> s.ident
   Scope s -> s.ident
   Drop s -> s.ident
 
 isExportedScope :: Node -> Boolean
-isExportedScope (Scope s) = s.visibility == Exported
+isExportedScope (Scope s) = s.isExported
 isExportedScope _ = false
 
 isDefinition :: Node -> Boolean
-isDefinition (Push s) = s.nature == Definition
-isDefinition (Pop s) = s.nature == Definition
+isDefinition (PopScopedSymbol s) = s.isDefinition
+isDefinition (PopSymbol s) = s.isDefinition
 isDefinition _ = false
 
 isReference :: Node -> Boolean
-isReference (Push s) = s.nature == Reference
-isReference (Pop s) = s.nature == Reference
+isReference (PushScopedSymbol s) = s.isReference
+isReference (PushSymbol s) = s.isReference
 isReference _ = false
 
 isJumpTo :: Node -> Boolean
@@ -84,12 +68,14 @@ isRoot Root = true
 isRoot _ = false
 
 symbol :: Node -> Maybe (Handle Symbol)
-symbol (Push s) = Just s.symbol
-symbol (Pop s) = Just s.symbol
+symbol (PushSymbol s) = Just s.symbol
+symbol (PushScopedSymbol s) = Just s.symbol
+symbol (PopSymbol s) = Just s.symbol
+symbol (PopScopedSymbol s) = Just s.symbol
 symbol _ = Nothing
 
 scope :: Node -> Maybe NodeID
-scope (Push { scoping: Scoped n}) = Just n
+scope (PushScopedSymbol s) = Just s.scope
 scope _ = Nothing
 
 file :: Node -> Maybe (Handle File)

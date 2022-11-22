@@ -10,9 +10,9 @@ import Data.HashMap as HashMap
 import Data.HashSet (HashSet)
 import Data.HashSet as HashSet
 
-import Handle
-import Node
-import Edge
+import Handle (Handle)
+import Node (Node)
+import Edge (Edge)
 
 -- Poor locality, etc, but will do for now.
 type NodesToEdges (r :: Region) = STRef r (HashMap (Handle Node) (HashSet Edge))
