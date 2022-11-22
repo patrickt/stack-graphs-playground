@@ -5,11 +5,7 @@ import Prim hiding (Symbol)
 
 import Data.Maybe (Maybe (..))
 import Control.Monad.ST (ST)
-import Control.Monad.ST.Ref (STRef)
-import Control.Monad.ST.Ref as STRef
-import Data.HashMap (HashMap)
-import Data.HashMap as HashMap
-import Data.Either
+import Data.Either (either)
 
 import Node (Node, Visibility (..), Nature (..))
 import Node as Node
@@ -51,6 +47,9 @@ makeNodeID f sg = do
   new <- Source.next sg.fresh
   pure { file: Just f, localIdent: new }
 
+get :: forall r . StackGraph r -> Handle Node -> ST r Node
+get sg = NodeStorage.get sg.nodes
+
 rootNode :: Handle Node
 rootNode = Handle.unsafe 1
 
@@ -80,7 +79,7 @@ getOrCreateFile str sg = StringStorage.insert sg.fresh str sg.files
 addEdge :: forall r . Handle Node -> Handle Node -> Int -> StackGraph r -> ST r Unit
 addEdge source sink precedence sg = NodesToEdges.add source sink precedence sg.edges
 
-hasEdge :: forall r. Handle Node -> Handle Node -> StackGraph r ->
+-- hasEdge :: forall r. Handle Node -> Handle Node -> StackGraph r ->
 
 -- This is https://github.github.com/stack-graph-docs/#import
 -- aka `import a.b` in Python.

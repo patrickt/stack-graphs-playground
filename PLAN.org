@@ -1,1 +1,3 @@
 Not going to intern strings: waste of time
+
+swift implementation atop RealityKit?
