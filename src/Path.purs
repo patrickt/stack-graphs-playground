@@ -55,7 +55,7 @@ maybeM :: forall m a . Applicative m => m a -> Maybe a -> m a
 maybeM err = maybe err pure
 
 -- Algorithm 1
-append :: forall r . (Partial) => StackGraph r -> Path -> Edge -> ST r (Either PathAppendError Path)
+append :: forall r . StackGraph r -> Path -> Edge -> ST r (Either PathAppendError Path)
 append sg self edge = runExceptT do
   unless (edge.source == self.start) (throwError IncorrectSourceNode)
   sink <- lift (StackGraph.get sg edge.sink)
@@ -79,4 +79,9 @@ append sg self edge = runExceptT do
       pure self { scopeStack = newScopes }
     Node.Drop _ -> do
       pure self { scopeStack = List.Nil }
-  pure staging
+    _ -> pure self
+  newSource <- lift (StackGraph.get sg edge.source)
+  pure staging {
+    end = edge.sink,
+    edges = List.Cons {source: Node.id newSource, precedence: edge.precedence} (staging.edges)
+  }
