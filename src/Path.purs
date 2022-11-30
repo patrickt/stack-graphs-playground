@@ -2,7 +2,6 @@ module Path where
 
 import Prelude
 
-import Control.Monad.Error.Class (class MonadThrow)
 import Control.Monad.Except (lift, runExceptT, throwError)
 import Control.Monad.ST (ST)
 import Data.Either (Either)
@@ -47,6 +46,10 @@ isComplete sg p = do
 data PathAppendError
   = IncorrectSourceNode
   | UnknownAttachedScope
+  | IncorrectPoppedSymbol
+  | EmptySymbolStack
+  | UnexpectedAttachedScopeList
+  | MissingAttachedScopeList
 
 maybeM :: forall m a . Applicative m => m a -> Maybe a -> m a
 maybeM err = maybe err pure
@@ -56,13 +59,24 @@ append :: forall r . (Partial) => StackGraph r -> Path -> Edge -> ST r (Either P
 append sg self edge = runExceptT do
   unless (edge.source == self.start) (throwError IncorrectSourceNode)
   sink <- lift (StackGraph.get sg edge.sink)
-  case sink of
-    -- Push-symbol nodes
+  staging <- case sink of
     Node.PushSymbol {symbol} -> do
       let scopedSymbol = { symbol, scopes: Nothing }
       pure self { symbolStack = List.Cons scopedSymbol self.symbolStack }
     Node.PushScopedSymbol {symbol, scope} -> do
       sinkScope <- lift (StackGraph.nodeForID sg scope) >>= maybeM (throwError UnknownAttachedScope)
       let scopedSymbol = { symbol, scopes: Just (List.Cons sinkScope self.scopeStack)}
-      pure self { symbolStack = List.Cons scopedSymbol self.symbolStack
-                }
+      pure self { symbolStack = List.Cons scopedSymbol self.symbolStack }
+    Node.PopSymbol pop -> do
+      {head: top, tail: rest} <- maybeM (throwError EmptySymbolStack) (List.uncons self.symbolStack)
+      unless (top.symbol == pop.symbol) (throwError IncorrectPoppedSymbol)
+      unless (top.scopes == Nothing) (throwError UnexpectedAttachedScopeList)
+      pure self { symbolStack = rest }
+    Node.PopScopedSymbol pop -> do
+      {head: top} <- maybeM (throwError EmptySymbolStack) (List.uncons self.symbolStack)
+      unless (top.symbol == pop.symbol) (throwError IncorrectPoppedSymbol)
+      newScopes <- maybeM (throwError MissingAttachedScopeList) top.scopes
+      pure self { scopeStack = newScopes }
+    Node.Drop _ -> do
+      pure self { scopeStack = List.Nil }
+  pure staging

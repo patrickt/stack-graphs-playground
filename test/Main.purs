@@ -1,20 +1,27 @@
 module Test.Main where
 
-import Control.Monad.Writer.Trans (execWriterT, lift, tell)
 import Prelude
-import StackGraph (StackGraph, sampleStackGraph)
+
 import Control.Monad.ST (ST)
 import Control.Monad.ST as ST
-import Data.List (List)
+import Control.Monad.Writer.Trans (execWriterT, lift, tell)
+import Data.Foldable (for_, length)
 import Data.Generic.Rep (class Generic)
-import Data.Show.Generic (genericShow)
+import Data.List (List)
 import Data.List as List
+import Data.Show.Generic (genericShow)
+import Data.String.NonEmpty (NonEmptyString)
+import Data.String.NonEmpty as NE
 import Effect (Effect)
 import Effect.Aff (launchAff_)
 import Partial.Unsafe (unsafePartial)
+import StackGraph (StackGraph, sampleStackGraph)
+import StackGraph as SG
 import StringStorage as StringStorage
+import Test.QuickCheck (Result, (===))
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (shouldContain)
+import Test.Spec.QuickCheck (quickCheck)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
 
@@ -30,10 +37,21 @@ basicStackGraphProps sg = execWriterT do
   size <- lift (StringStorage.size sg.symbols)
   tell (List.singleton (SymbolCount size))
 
+itDeduplicatesSymbols :: List NonEmptyString -> Result
+itDeduplicatesSymbols syms = do
+  let uniqueCount = length (List.nub syms)
+  let result = (ST.run do
+                   sg <- SG.newStackGraph
+                   for_ syms (\str -> SG.addSymbol (NE.toString str) sg)
+                   StringStorage.size sg.symbols)
+  result === uniqueCount
 
 main :: Effect Unit
 main = launchAff_ $ runSpec [consoleReporter] do
   describe "stack-graphs-playground" do
+    describe "generative tests" do
+      it "deduplicatesSymbols" (quickCheck itDeduplicatesSymbols)
+
     describe "import a.b" do
       it "has required nodes" do
         let (props :: List Prop) = ST.run (unsafePartial sampleStackGraph >>= basicStackGraphProps)

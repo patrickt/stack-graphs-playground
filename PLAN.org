@@ -1,3 +1,7 @@
 Not going to intern strings: waste of time
 
 swift implementation atop RealityKit?
+
+* Efficiencies
+
+- NodeID can be implemented as a 64-bit integer

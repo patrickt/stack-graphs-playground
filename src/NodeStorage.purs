@@ -1,7 +1,7 @@
 module NodeStorage where
 
-import Data.Either
-import Data.Maybe
+import Data.Either (Either(..))
+import Data.Maybe (Maybe(..))
 import Prelude
 
 import Control.Monad.ST (ST)
@@ -11,6 +11,7 @@ import Data.HashMap (HashMap)
 import Data.HashMap as HashMap
 import Handle (Handle)
 import Node (Node)
+import NodeID (NodeID)
 import Partial.Unsafe (unsafeCrashWith)
 import Source (Source)
 import Source as Source
@@ -43,3 +44,6 @@ get s n = do
   case HashMap.lookup n val.handlesToNodes of
     Just x -> pure x
     Nothing -> unsafeCrashWith "BUG: unsafe handle lookup; either I or you have erred wildly"
+
+lookup :: forall r . NodeStorage r -> NodeID -> ST r (Maybe (Handle Node))
+lookup _ _ = pure Nothing

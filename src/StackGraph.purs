@@ -48,7 +48,7 @@ makeNodeID f sg = do
   pure { file: Just f, localIdent: new }
 
 nodeForID :: forall r . StackGraph r -> NodeID -> ST r (Maybe (Handle Node))
-nodeForID _ _ = pure Nothing
+nodeForID sg = NodeStorage.lookup sg.nodes
 
 get :: forall r . StackGraph r -> Handle Node -> ST r Node
 get sg = NodeStorage.get sg.nodes
