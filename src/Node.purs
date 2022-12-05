@@ -1,13 +1,11 @@
 module Node where
 
-import Data.Hashable
-import Data.Maybe
+import Data.Hashable (class Hashable)
+import Data.Maybe (Maybe(..))
 import Prelude
 import Prim hiding (Symbol)
 
 import Data.Function (on)
-import Data.Generic.Rep (class Generic)
-import Data.Show.Generic (genericShow)
 import Data.UInt as UInt
 import File (File)
 import Handle (Handle)

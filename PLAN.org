@@ -2,6 +2,11 @@ Not going to intern strings: waste of time
 
 swift implementation atop RealityKit?
 
+* TODO define the JSON type via quicktype.io
+* TODO implement native types
+* TODO define the Bridge instance for JSON Native
+* TODO define the Proj/Inj instance for Native Fast
+
 * Efficiencies
 
 - NodeID can be implemented as a 64-bit integer

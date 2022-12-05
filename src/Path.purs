@@ -85,3 +85,25 @@ append sg self edge = runExceptT do
     end = edge.sink,
     edges = List.Cons {source: Node.id newSource, precedence: edge.precedence} (staging.edges)
   }
+
+data PathResolveError
+  = NothingToDo
+  | EmptyScopeStack
+
+-- Algorithm 2. Time complexity (NODELOOKUP * 2) + LISTUNCONS + LISTCONS
+resolve :: forall r . StackGraph r -> Path -> ST r (Either PathResolveError Path)
+resolve sg self = runExceptT do
+  node <- lift (StackGraph.get sg self.end)
+  unless (Node.isJumpTo node) (throwError NothingToDo)
+
+  popped <- maybeM (throwError EmptyScopeStack) (List.uncons self.scopeStack)
+  curr <- lift (StackGraph.get sg self.end)
+  let (jumpEdge :: PathEdge) = {
+    source: Node.id curr,
+    precedence: 0
+  }
+  pure (self {
+    edges = List.Cons jumpEdge self.edges,
+    scopeStack = popped.tail,
+    end = popped.head
+  })
