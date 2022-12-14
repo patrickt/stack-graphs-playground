@@ -69,10 +69,9 @@ main = do
         it "parses JSON to JSON type" do
           item <- readTextFile UTF8 "test/sample.json"
           item `shouldNotEqual` ""
-          let ejson = jsonParser item
-          let json = fromRight jsonNull ejson
+          let json = fromRight jsonNull (jsonParser item)
           PrintJson json `shouldNotSatisfy` (unprint >>> Json.isNull)
-          (decodeJson json :: Either JsonDecodeError JsonSg.StackGraph) `shouldSatisfy` isRight
+          (decodeJson json :: _ JsonSg.StackGraph) `shouldSatisfy` isRight
 
       describe "generative tests" do
         it "deduplicatesSymbols" (quickCheck itDeduplicatesSymbols)
@@ -81,7 +80,3 @@ main = do
         it "has required nodes" do
           let (props :: List Prop) = ST.run (unsafePartial sampleStackGraph >>= basicStackGraphProps)
           props `shouldContain` SymbolCount 3
-    -- sg <- unsafePartial (runST (sampleStackGraph >>= basicStackGraphProps))
-
-    -- log "🍝"
-    -- log "You should add some tests."
