@@ -1,40 +1,34 @@
 module Bridge where
 
+import Data.Maybe (Maybe)
+
 -- JSON -> "native"
 
 -- "native" -> Fast -> m ()
 
 -- full isomorphism
-class Convert foreign native where
-  convertForeign :: foreign -> native
-  -- convertForeign = view converted
-  convertNative :: native -> foreign
+class Convert extern native where
+  convertExtern :: extern -> native
+  -- convertExtern = view converted
+  convertNative :: native -> extern
   -- convertNarive = review converted
 
-  -- converted :: Iso' foreign native
-  -- converted = iso convertForeign convertNative
+  -- converted :: Iso' extern native
+  -- converted = iso convertExtern convertNative
 
 -- partial isomorphism
-class Bridge foreign native where
-  tryBridgeForeign :: foreign -> Maybe native
-  -- tryBridgeForeign = preview bridged
-  bridgeNative :: native -> foreign
+class Bridge extern native where
+  tryBridgeExtern :: extern -> Maybe native
+  -- tryBridgeExtern = preview bridged
+  bridgeNative :: native -> extern
   -- bridgeNative = review bridged
 
-  -- bridged :: Prism' foreign native
-  -- bridged = prism' tryBridgedForeign bridgeNative
+  -- bridged :: Prism' extern native
+  -- bridged = prism' tryBridgedExtern bridgeNative
 
-class Injectable foreign native where
-  -- causes side effects
-  inject :: MonadEffect m => native -> m (Handle foreign)
+-- class Injectable extern native where
+--   -- causes side effects
+--   inject :: MonadEffect m => native -> m (Handle extern)
 
-class Projectable foreign native where
-  project :: MonadEffect m => Handle foreign -> m native
-
-data JSONStackGraph = JSONStackGraph
-data NativeStackGraph = NativeStackGraph
-
-instance Bridge JSONStackGraph NativeStackGraph
-
-instance Injectable Stateful.StackGraph Native.StackGraph
-instance Projectable NativeStackGraph Stateful.StackGraph
+-- class Projectable extern native where
+--   project :: MonadEffect m => Handle extern -> m native

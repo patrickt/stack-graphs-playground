@@ -1,10 +1,15 @@
 module Test.Main where
 
 import Prelude
+import Test.Spec.Assertions
 
 import Control.Monad.ST (ST)
 import Control.Monad.ST as ST
 import Control.Monad.Writer.Trans (execWriterT, lift, tell)
+import Data.Argonaut.Core (Json)
+import Data.Argonaut.Core as Json
+import Data.Argonaut.Parser (jsonParser)
+import Data.Either (isRight)
 import Data.Foldable (for_, length)
 import Data.Generic.Rep (class Generic)
 import Data.List (List)
@@ -14,13 +19,14 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NE
 import Effect (Effect)
 import Effect.Aff (launchAff_)
+import Node.Encoding (Encoding(UTF8))
+import Node.FS.Aff (readTextFile)
 import Partial.Unsafe (unsafePartial)
 import StackGraph (StackGraph, sampleStackGraph)
 import StackGraph as SG
 import StringStorage as StringStorage
 import Test.QuickCheck (Result, (===))
 import Test.Spec (describe, it)
-import Test.Spec.Assertions (shouldContain)
 import Test.Spec.QuickCheck (quickCheck)
 import Test.Spec.Reporter.Console (consoleReporter)
 import Test.Spec.Runner (runSpec)
@@ -46,17 +52,29 @@ itDeduplicatesSymbols syms = do
                    StringStorage.size sg.symbols)
   result === uniqueCount
 
+newtype PrintJson = PrintJson Json
+
+instance Show PrintJson where show (PrintJson p) = Json.stringify p
+
 main :: Effect Unit
-main = launchAff_ $ runSpec [consoleReporter] do
-  describe "stack-graphs-playground" do
-    describe "generative tests" do
-      it "deduplicatesSymbols" (quickCheck itDeduplicatesSymbols)
+main = do
+  launchAff_ $ runSpec [consoleReporter] do
+    describe "stack-graphs-playground" do
+      describe "unit tests" do
+        it "parses JSON to JSON type" do
+          item <- readTextFile UTF8 "test/sample.json"
+          item `shouldNotEqual` ""
+          let ejson = jsonParser item
+          map PrintJson ejson `shouldSatisfy` isRight
 
-    describe "import a.b" do
-      it "has required nodes" do
-        let (props :: List Prop) = ST.run (unsafePartial sampleStackGraph >>= basicStackGraphProps)
-        props `shouldContain` SymbolCount 3
-  -- sg <- unsafePartial (runST (sampleStackGraph >>= basicStackGraphProps))
+      describe "generative tests" do
+        it "deduplicatesSymbols" (quickCheck itDeduplicatesSymbols)
 
-  -- log "🍝"
-  -- log "You should add some tests."
+      describe "import a.b" do
+        it "has required nodes" do
+          let (props :: List Prop) = ST.run (unsafePartial sampleStackGraph >>= basicStackGraphProps)
+          props `shouldContain` SymbolCount 3
+    -- sg <- unsafePartial (runST (sampleStackGraph >>= basicStackGraphProps))
+
+    -- log "🍝"
+    -- log "You should add some tests."
