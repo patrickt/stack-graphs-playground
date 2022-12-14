@@ -1,15 +1,17 @@
 module Test.Main where
 
+import Data.Argonaut.Decode.Class
 import Prelude
 import Test.Spec.Assertions
 
 import Control.Monad.ST (ST)
 import Control.Monad.ST as ST
 import Control.Monad.Writer.Trans (execWriterT, lift, tell)
-import Data.Argonaut.Core (Json)
+import Data.Argonaut.Core (Json, jsonNull)
 import Data.Argonaut.Core as Json
+import Data.Argonaut.Decode (JsonDecodeError)
 import Data.Argonaut.Parser (jsonParser)
-import Data.Either (isRight)
+import Data.Either (Either, either, fromLeft, fromRight, isRight)
 import Data.Foldable (for_, length)
 import Data.Generic.Rep (class Generic)
 import Data.List (List)
@@ -19,6 +21,7 @@ import Data.String.NonEmpty (NonEmptyString)
 import Data.String.NonEmpty as NE
 import Effect (Effect)
 import Effect.Aff (launchAff_)
+import JSON as JsonSg
 import Node.Encoding (Encoding(UTF8))
 import Node.FS.Aff (readTextFile)
 import Partial.Unsafe (unsafePartial)
@@ -53,6 +56,8 @@ itDeduplicatesSymbols syms = do
   result === uniqueCount
 
 newtype PrintJson = PrintJson Json
+unprint :: PrintJson -> Json
+unprint (PrintJson json) = json
 
 instance Show PrintJson where show (PrintJson p) = Json.stringify p
 
@@ -65,7 +70,9 @@ main = do
           item <- readTextFile UTF8 "test/sample.json"
           item `shouldNotEqual` ""
           let ejson = jsonParser item
-          map PrintJson ejson `shouldSatisfy` isRight
+          let json = fromRight jsonNull ejson
+          PrintJson json `shouldNotSatisfy` (unprint >>> Json.isNull)
+          (decodeJson json :: Either JsonDecodeError JsonSg.StackGraph) `shouldSatisfy` isRight
 
       describe "generative tests" do
         it "deduplicatesSymbols" (quickCheck itDeduplicatesSymbols)
