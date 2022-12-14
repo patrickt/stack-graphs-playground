@@ -1,5 +1,6 @@
 module Bridge where
 
+import Data.Lens
 import Data.Maybe (Maybe)
 
 -- JSON -> "native"
@@ -7,24 +8,28 @@ import Data.Maybe (Maybe)
 -- "native" -> Fast -> m ()
 
 -- full isomorphism
-class Convert extern native where
-  convertExtern :: extern -> native
-  -- convertExtern = view converted
-  convertNative :: native -> extern
-  -- convertNarive = review converted
+class Convert extern native | extern -> native where
+  converted :: Iso' extern native
 
-  -- converted :: Iso' extern native
-  -- converted = iso convertExtern convertNative
+convertExtern :: forall extern native . Convert extern native => extern -> native
+convertExtern = view converted
+
+convertNative :: forall extern native . Convert extern native => native -> extern
+convertNative = review converted
 
 -- partial isomorphism
 class Bridge extern native where
-  tryBridgeExtern :: extern -> Maybe native
-  -- tryBridgeExtern = preview bridged
-  bridgeNative :: native -> extern
-  -- bridgeNative = review bridged
+  bridged :: Prism' extern native
 
-  -- bridged :: Prism' extern native
-  -- bridged = prism' tryBridgedExtern bridgeNative
+tryBridgeExtern :: forall extern native . Bridge extern native => extern -> Maybe native
+tryBridgeExtern = preview bridged
+
+  -- tryBridgeExtern = preview bridged
+bridgeNative :: forall extern native . Bridge extern native => native -> extern
+bridgeNative = review bridged
+
+-- **********
+--
 
 -- class Injectable extern native where
 --   -- causes side effects

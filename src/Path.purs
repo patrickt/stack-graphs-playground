@@ -55,14 +55,15 @@ maybeM :: forall m a . Applicative m => m a -> Maybe a -> m a
 maybeM err = maybe err pure
 
 -- Algorithm 1
+-- time complexity EDGECOMP + (NODELOOKUP * 2) +
 append :: forall r . StackGraph r -> Path -> Edge -> ST r (Either PathAppendError Path)
 append sg self edge = runExceptT do
-  unless (edge.source == self.start) (throwError IncorrectSourceNode)
-  sink <- lift (StackGraph.get sg edge.sink)
+  unless (edge.source == self.start) (throwError IncorrectSourceNode) -- EDGECOMP
+  sink <- lift (StackGraph.get sg edge.sink) -- NODELOOKUP
   staging <- case sink of
     Node.PushSymbol {symbol} -> do
       let scopedSymbol = { symbol, scopes: Nothing }
-      pure self { symbolStack = List.Cons scopedSymbol self.symbolStack }
+      pure self { symbolStack = List.Cons scopedSymbol self.symbolStack } -- LISTCONS
     Node.PushScopedSymbol {symbol, scope} -> do
       sinkScope <- lift (StackGraph.nodeForID sg scope) >>= maybeM (throwError UnknownAttachedScope)
       let scopedSymbol = { symbol, scopes: Just (List.Cons sinkScope self.scopeStack)}

@@ -17,7 +17,7 @@ import Source (Source)
 import Source as Source
 
 type NodeStorage r = STRef r { nodesToHandles :: HashMap Node (Handle Node),
-                               handlesToNodes :: HashMap (Handle Node) Node
+                               handlesToIds :: HashMap (Handle Node) NodeId,
                              }
 
 new :: forall r. ST r (NodeStorage r)
